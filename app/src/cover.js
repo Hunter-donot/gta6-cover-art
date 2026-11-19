@@ -12,7 +12,7 @@ export const SIZES = {
 };
 
 export const GRADES = {
-  sunset: { name: 'Vice Sunset', sat: 1.28, con: 1.08, sepia: 0.16, hue: 0, bright: 1.0, tint: 'rgba(255,110,40,0.10)', tintMode: 'overlay' },
+  sunset: { name: 'Vice Sunset', sat: 1.28, con: 1.08, sepia: 0.24, hue: 0, bright: 1.0, tint: 'rgba(255,110,40,0.16)', tintMode: 'overlay' },
   neon: { name: 'Neon Night', sat: 1.45, con: 1.12, sepia: 0.0, hue: -14, bright: 0.98, tint: 'rgba(180,40,255,0.13)', tintMode: 'soft-light' },
   golden: { name: 'Golden Hour', sat: 1.16, con: 1.05, sepia: 0.34, hue: 0, bright: 1.04, tint: 'rgba(255,180,60,0.10)', tintMode: 'overlay' },
   duotone: { name: 'Duotone Pink / Teal', sat: 1.7, con: 1.16, sepia: 0.0, hue: 158, bright: 1.0, tint: 'rgba(255,46,136,0.13)', tintMode: 'multiply' },
@@ -21,6 +21,7 @@ export const GRADES = {
 };
 
 export const LAYOUTS = {
+  hero7: 'Hero 7-panel',
   hero: 'Hero',
   comic: 'Comic',
   grid9: '9-panel grid',
@@ -63,9 +64,9 @@ export const SUBTITLES = [
 export function defaultState() {
   return {
     size: 'landscape',
-    layout: 'hero',
+    layout: 'hero7',
     grade: 'sunset',
-    strength: 0.85, contrast: 1.0, saturation: 1.0,
+    strength: 1.0, contrast: 1.0, saturation: 1.0,
     grain: 0.35, vignette: 0.45, halftone: 0.3, painterly: 0.25, ink: 0.0,
     title: 'VICE TIDE', subtitle: 'Saltwater Nights',
     tagline: 'ONE COAST  •  NO RULES  •  COMING SOON',
@@ -85,17 +86,17 @@ export function defaultState() {
 /** The four zones of a cover, as fractions of the canvas height. */
 function zones(H) {
   return {
-    collage: { y: 0, h: H * 0.61 },
-    title: { y: H * 0.61, h: H * 0.23 },
-    quote: { y: H * 0.84, h: H * 0.055 },
-    footer: { y: H * 0.895, h: H * 0.105 },
+    collage: { y: 0, h: H * 0.54 },
+    title: { y: H * 0.54, h: H * 0.32 },
+    quote: { y: H * 0.86, h: H * 0.05 },
+    footer: { y: H * 0.91, h: H * 0.09 },
   };
 }
 
 /** The collage rectangle (the panel area) for a canvas of W x H. */
 export function collageRect(W, H) {
   const gutter = Math.max(6, W * 0.004);
-  return { x: gutter, y: gutter, w: W - gutter * 2, h: H * 0.61 - gutter };
+  return { x: gutter, y: gutter, w: W - gutter * 2, h: H * 0.54 - gutter };
 }
 
 /** Panel rectangles for a layout, inside the collage rect (fractions of it). */
@@ -111,6 +112,15 @@ export function layoutPanels(layout, rect) {
     h: h * ch - (cy > 0 ? g / 2 : 0) - (cy + ch < 1 ? g / 2 : 0),
   });
   switch (layout) {
+    case 'hero7': return [
+      cell(0, 0, 0.55, 1),
+      cell(0.55, 0, 0.225, 0.5),
+      cell(0.775, 0, 0.225, 0.5),
+      cell(0.55, 0.5, 0.1125, 0.5),
+      cell(0.6625, 0.5, 0.1125, 0.5),
+      cell(0.775, 0.5, 0.1125, 0.5),
+      cell(0.8875, 0.5, 0.1125, 0.5),
+    ];
     case 'hero': return [
       cell(0, 0, 0.55, 1),
       cell(0.55, 0, 0.45, 0.5),
@@ -208,7 +218,9 @@ function drawPanelPhoto(ctx, img, panel, slot) {
   ctx.restore();
 }
 
-/** A black chip with condensed white text along a panel's foot. */
+/** A black chip with condensed white text along a panel's foot.
+ *  Narrow panels get a two-line chip (place/time over tagline) so the text
+ *  never spills past the panel's edge. */
 function drawLabelChip(ctx, panel, text, W) {
   const pad = Math.max(8, W * 0.006);
   let size = Math.max(13, Math.min(panel.h * 0.085, W * 0.016));
@@ -218,17 +230,33 @@ function drawLabelChip(ctx, panel, text, W) {
     size -= 1;
     ctx.font = `${size}px "Bebas Neue", sans-serif`;
   }
-  const tw = ctx.measureText(text).width;
-  const chipH = size * 1.55;
-  const chipW = tw + pad * 2;
-  const x = panel.x + pad, y = panel.y + panel.h - chipH - pad;
-  ctx.fillStyle = 'rgba(8,6,14,0.88)';
-  roundRect(ctx, x, y, chipW, chipH, chipH * 0.28);
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
+  const fitsOneLine = ctx.measureText(text).width <= panel.w - pad * 2 - 8;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + pad, y + chipH / 2 + size * 0.04);
+  if (fitsOneLine) {
+    const tw = ctx.measureText(text).width;
+    const chipH = size * 1.55;
+    const chipW = tw + pad * 2;
+    const x = panel.x + pad, y = panel.y + panel.h - chipH - pad;
+    ctx.fillStyle = 'rgba(8,6,14,0.88)';
+    roundRect(ctx, x, y, chipW, chipH, chipH * 0.28);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, x + pad, y + chipH / 2 + size * 0.04);
+  } else {
+    // Split "PLACE  TIME  —  TAGLINE" into two short lines.
+    const parts = text.split(/\s+—\s+/);
+    const lines = parts.length === 2 ? parts : [text.slice(0, Math.ceil(text.length / 2)), text.slice(Math.ceil(text.length / 2))];
+    const lineH = size * 1.3;
+    const chipH = lineH * lines.length + size * 0.5;
+    const chipW = Math.max(...lines.map((l) => ctx.measureText(l).width)) + pad * 2;
+    const x = panel.x + pad, y = panel.y + panel.h - chipH - pad;
+    ctx.fillStyle = 'rgba(8,6,14,0.88)';
+    roundRect(ctx, x, y, chipW, chipH, chipH * 0.22);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    lines.forEach((line, i) => ctx.fillText(line, x + pad, y + size * 0.55 + i * lineH));
+  }
   try { ctx.letterSpacing = '0px'; } catch { /* older canvas */ }
 }
 
@@ -284,7 +312,7 @@ function drawBarcode(ctx, x, y, w, h, seed) {
   const rnd = mulberry32(seed);
   ctx.save();
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x - 4, y - 4, w + 8, h + 18);
+  ctx.fillRect(x - 4, y - 4, w + 8, h + 8);
   ctx.fillStyle = '#12081c';
   let bx = x;
   while (bx < x + w - 2) {
@@ -292,9 +320,7 @@ function drawBarcode(ctx, x, y, w, h, seed) {
     if (rnd() > 0.42) ctx.fillRect(bx, y, bw, h);
     bx += bw + 1 + Math.floor(rnd() * 3);
   }
-  ctx.font = `bold ${Math.max(9, h * 0.18)}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText('0 260626 000001', x + w / 2, y + h + 12);
+  // No number under the bars: it used to run into the fine print.
   ctx.restore();
 }
 
@@ -438,22 +464,8 @@ export function drawCover(ctx, photos, state, W, H, highlight = -1) {
     // Starburst on the hero panel's top-right corner.
     drawStarburst(ctx, hero.x + hero.w - W * 0.045, hero.y + W * 0.045, W * 0.04, ['ORIGINAL', 'COVER ART']);
   }
-  if (state.showRibbon) {
-    // A magenta ribbon slashed diagonally across the collage's top-right
-    // corner, its centre pulled inside the canvas so the text stays visible.
-    ctx.save();
-    const d = collage.w * 0.08;
-    ctx.translate(collage.x + collage.w - d, collage.y + d);
-    ctx.rotate(Math.PI / 4);
-    const rw = collage.w * 0.45, rh = Math.max(22, W * 0.024);
-    ctx.fillStyle = '#ff2e88';
-    ctx.fillRect(-rw / 2, -rh / 2, rw, rh);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${rh * 0.52}px "Bebas Neue", sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText((state.ribbon || "COLLECTOR'S EDITION").toUpperCase(), 0, 1);
-    ctx.restore();
-  }
+  // The COLLECTOR'S EDITION ribbon is drawn in the title band (small and
+  // horizontal), not slashed across the collage — see the title section.
   // HUD chips: WANTED / HEAT with stars, at the top of the right-hand panels
   // (the title sits low, so the bottom of a panel is no place for a chip).
   if (state.hud && panels.length > 1) {
@@ -488,8 +500,12 @@ export function drawCover(ctx, photos, state, W, H, highlight = -1) {
     ctx.restore();
   }
 
-  // ---- Title band ----
-  ctx.fillStyle = '#fff3e0';
+  // ---- Title band: a rich sunset gradient, not empty cream ----
+  const bandGrad = ctx.createLinearGradient(0, z.title.y, 0, z.title.y + z.title.h);
+  bandGrad.addColorStop(0, '#2a0a3a');
+  bandGrad.addColorStop(0.5, '#ff2e88');
+  bandGrad.addColorStop(1, '#ff7a1a');
+  ctx.fillStyle = bandGrad;
   ctx.fillRect(0, z.title.y, W, z.title.h);
   const title = (state.title || 'VICE TIDE').trim().toUpperCase();
   let titleSize = W * 0.1;
@@ -499,8 +515,25 @@ export function drawCover(ctx, photos, state, W, H, highlight = -1) {
     titleSize -= 4;
     ctx.font = titleFont(titleSize);
   }
-  // The title sits just under the collage, clear of every panel label chip.
-  const titleY = z.title.y + z.title.h * 0.66;
+  // Grow the title until it fills the cover (or hits the height cap): the
+  // short title needs a big size to span the width. The only cap is the
+  // height cap — the title + script must fit inside the band (cap ~0.88em,
+  // script descent ~0.46em, script overlapping the title's lower edge), so
+  // the title never rises into the collage and covers a panel label chip.
+  // The width is bounded by the 0.88W target itself (and the shrink loop
+  // above keeps it under 0.92W).
+  const sizeCap = H * 0.276;
+  while (ctx.measureText(title).width < W * 0.88 && titleSize < sizeCap) {
+    titleSize += 4;
+    ctx.font = titleFont(titleSize);
+  }
+  // Centre the title + script block vertically in the band: the script
+  // overlaps the title's lower edge and its descenders stay inside the
+  // band. (Block height ~1.157em: cap 0.88em + script below the baseline.)
+  const subSize = Math.max(28, titleSize * 0.42);
+  const blockH = titleSize * 1.157;
+  const titleY = z.title.y + (z.title.h - blockH) / 2 + titleSize * 0.88;
+  const subY = titleY + subSize * 0.2;
   const grad = ctx.createLinearGradient(W * 0.06, 0, W * 0.94, 0);
   grad.addColorStop(0, '#ff7a1a');
   grad.addColorStop(0.45, '#ffd23e');
@@ -522,21 +555,38 @@ export function drawCover(ctx, photos, state, W, H, highlight = -1) {
   ctx.fillText(title, W / 2, titleY);
   ctx.restore();
   // Subtitle: neon script overlapping the title's lower edge, drawn last so
-  // it is never hidden behind the title.
+  // it is never hidden behind the title. Kept at 0.42x the title so the
+  // wide Pacifico script stays narrower than the title itself.
   const subtitle = (state.subtitle || '').trim();
   if (subtitle) {
-    const subSize = Math.max(28, titleSize * 0.42);
     ctx.save();
     ctx.font = `${subSize}px Pacifico, cursive`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    const subY = titleY + subSize * 0.62;
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.95)';
     ctx.lineWidth = Math.max(3, subSize * 0.09);
     ctx.strokeText(subtitle, W / 2, subY);
     ctx.fillStyle = '#ff2e88';
     ctx.fillText(subtitle, W / 2, subY);
+    ctx.restore();
+  }
+  // COLLECTOR'S EDITION ribbon: a small horizontal bar tucked into the
+  // band's bottom-right corner, clear of the centred script and of every
+  // photo face and panel label.
+  if (state.showRibbon) {
+    const rh = Math.max(18, W * 0.02);
+    const rw = W * 0.16;
+    const rx = W - rw - W * 0.015;
+    const ry = z.title.y + z.title.h - rh - Math.max(6, W * 0.004);
+    ctx.save();
+    ctx.fillStyle = '#ff2e88';
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${rh * 0.52}px "Bebas Neue", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((state.ribbon || "COLLECTOR'S EDITION").toUpperCase(), rx + rw / 2, ry + rh / 2 + 1);
     ctx.restore();
   }
 
