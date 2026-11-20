@@ -1,21 +1,17 @@
-[![make.fun](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
-[![Rank](https://make.fun/badge/gta6-cover-art-01/Hunter-donot/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard)
-[![Reward](https://make.fun/badge/gta6-cover-art-01/Hunter-donot/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
+# VICE TIDE Cover Studio
 
-# VICE TIDE — Cover Studio
+Turn a photo and a caption into GTA 6-style cover art, then export it as a PNG.
 
-Turn your photos into GTA 6-style cover art. Add photos, pick a layout
-(Hero, Comic, 9-panel grid, Mosaic, Center Stage, or 2/3/4 panels), grade it
-(Vice Sunset, Neon Night, Golden Hour, Duotone Pink/Teal, Comic Ink,
-Natural/Noir Heat), type a title — the cover gets a huge sunset-gradient
-title, a neon script subtitle, panel label chips, a press quote strip and a
-palm footer with badges — then export a PNG in landscape (1920 × 1080),
-portrait (1080 × 1350) or square (1080 × 1080).
+[![gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![rank](https://make.fun/badge/gta6-cover-art-01/Hunter-donot/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![reward](https://make.fun/badge/gta6-cover-art-01/Hunter-donot/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
 
-The two sample photos (`app/samples/`) were made for make.fun with an image
-model and are free to use. The Anton, Pacifico and Bebas Neue fonts are
-vendored under `app/fonts/` (SIL Open Font License), so the app makes zero
-network requests.
+## What it does
+
+Pick a photo, pick a layout and a grade, type a caption, and VICE TIDE builds a
+golden-hour cover: a multi-panel photo collage, a huge sunset-gradient title,
+a pink script subtitle, and the full badge set (EST. 2026, VOL. 06,
+COLLECTOR'S EDITION, WANTED ★★★★★, HEAT ★★★★★, barcode).
 
 ## Run it
 
@@ -23,17 +19,28 @@ network requests.
 node serve.ts
 ```
 
-Then open <http://localhost:8080> in a desktop browser.
+Then open the app in your browser. Everything runs offline — the fonts
+(Anton, Bebas Neue, Pacifico) are vendored in `app/fonts/`.
 
-## Build the entry
+## Export
 
-```sh
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-```
+One click exports a PNG in any of three sizes:
 
-This copies `app/` and `screenshots/` to `out/` and writes
-`out/dossier.json`.
+- 1080 × 1080 (square)
+- 1080 × 1350 (portrait)
+- 1920 × 1080 (landscape)
 
-## License
+## Layout
 
-MIT — see [LICENSE](LICENSE).
+- `main.ts` — entrypoint: copies `app/` and `screenshots/` into `/output` and
+  writes `/output/dossier.json`.
+- `serve.ts` — static dev server.
+- `shots.json` — the four screenshots (the first one is the cover).
+- `app/` — the web app: `index.html`, `style.css`, `src/main.js` (editor),
+  `src/shots.js` (shot mode), `src/cover.js` (the cover renderer),
+  `samples/` (photos), `fonts/` (vendored fonts).
+- `screenshots/` — the cover and editor screenshots.
+- `vendor/makefun-app.ts` — the dossier builder (do not edit).
+
+VICE TIDE is fan fiction. Not affiliated with or endorsed by any game studio.
+All photos were made for make.fun.
