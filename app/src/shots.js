@@ -1,77 +1,97 @@
-// VICE TIDE Cover Studio — shot mode for screenshots.
-// Reads ?shot=cover (standalone cover canvas) or ?shot=editor (editor with a
-// preset) and flags window.__shotDone when the frame is painted, so the
-// screenshot runner knows the shot is ready. Plain ES module.
+// VICE TIDE Cover Studio — shot mode.
+// Renders the four screenshots headlessly: ?shot=cover draws only the cover
+// at ?w= x ?h=; ?shot=editor shows the editor with hero7 + sunset active.
+// Sets window.__shotDone when fonts, photos and paint are ready.
+// Plain ES module, imports the cover renderer from cover.js.
 
-import { defaultState, drawCover } from './cover.js';
-import { initEditor } from './main.js';
+import {
+  PHOTOS,
+  defaultState,
+  drawCover,
+  loadPhotos,
+  photosReady,
+} from './cover.js';
 
 function params() {
   return new URLSearchParams(window.location.search);
 }
 
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('failed to load ' + src));
-    img.src = src;
-  });
+function whenReady(images, fn) {
+  const check = () => {
+    if (photosReady(images) && document.fonts && document.fonts.status === 'loaded') {
+      fn();
+    } else if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        if (photosReady(images)) fn();
+        else setTimeout(check, 100);
+      });
+    } else {
+      setTimeout(check, 100);
+    }
+  };
+  check();
 }
 
-async function loadSamples() {
-  const out = {};
-  for (const id of ['boulevard', 'pier']) {
-    try { out[id] = await loadImage(`samples/${id}.jpg`); }
-    catch (e) { console.warn('sample failed:', id, e); }
-  }
-  return out;
-}
-
-async function shotCover() {
+function runCoverShot() {
+  // Tell main.js (loaded after this module) to skip the editor entirely.
+  window.__shotCoverOnly = true;
   const p = params();
-  const w = parseInt(p.get('w') || '1280', 10);
-  const h = parseInt(p.get('h') || '720', 10);
+  const W = parseInt(p.get('w') || '1280', 10);
+  const H = parseInt(p.get('h') || '720', 10);
+  const photoKey = p.get('photo') || 'boulevard';
   const state = defaultState();
-  state.photo = p.get('photo') || 'boulevard';
   state.layout = 'hero7';
   state.grade = 'sunset';
   state.strength = 1.0;
-  const photos = await loadSamples();
-  // Standalone cover canvas only — no editor chrome on top.
-  window.__shotCoverOnly = true;
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  canvas.style.width = '100vw';
-  canvas.style.height = '100vh';
-  canvas.style.display = 'block';
-  document.body.innerHTML = '';
+  state.photo = photoKey;
+  const images = loadPhotos();
+  // Replace the whole page with a bare canvas at exactly W x H.
   document.body.style.margin = '0';
-  document.body.style.background = '#160a24';
+  document.body.style.padding = '0';
+  document.body.style.background = '#fff';
+  document.body.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.display = 'block';
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  // Wait for the vendored fonts so the title/script render in Anton/Pacifico.
-  try { await document.fonts.ready; } catch (e) { /* fonts are best-effort */ }
-  drawCover(ctx, w, h, state, photos);
-  window.__shotDone = true;
-}
-
-async function shotEditor() {
-  const root = document.getElementById('app');
-  if (!root) { window.__shotDone = true; return; }
-  await initEditor(root);
-  try { await document.fonts.ready; } catch (e) { /* best-effort */ }
-  // Re-render once fonts arrive so the preview is final.
-  await new Promise((r) => setTimeout(r, 300));
-  window.__shotDone = true;
-}
-
-if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const p = params();
-    const shot = p.get('shot');
-    if (shot === 'cover') shotCover().catch((e) => { console.error(e); window.__shotDone = true; });
-    else if (shot === 'editor') shotEditor().catch((e) => { console.error(e); window.__shotDone = true; });
+  whenReady(images, () => {
+    drawCover(ctx, state, W, H, images);
+    // One more frame so the paint lands before the screenshot.
+    requestAnimationFrame(() => {
+      window.__shotDone = true;
+    });
   });
+}
+
+function runEditorShot() {
+  // Let main.js initialise the editor (hero7 + sunset + boulevard by
+  // default), then flag done once fonts and photos are ready.
+  const images = loadPhotos();
+  const state = defaultState();
+  void state;
+  void PHOTOS;
+  const check = () => {
+    const preview = document.getElementById('preview');
+    if (photosReady(images) && preview && preview.width > 0) {
+      window.__shotDone = true;
+    } else {
+      setTimeout(check, 150);
+    }
+  };
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => setTimeout(check, 300));
+  } else {
+    setTimeout(check, 500);
+  }
+}
+
+const mode = params().get('shot');
+if (mode === 'cover') {
+  runCoverShot();
+} else if (mode === 'editor') {
+  runEditorShot();
 }
