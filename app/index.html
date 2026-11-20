@@ -1,163 +1,65 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VICE TIDE — Cover Studio</title>
-<link rel="stylesheet" href="./style.css">
+<title>VICE TIDE Cover Studio</title>
+<link rel="stylesheet" href="style.css">
+<style>
+@font-face { font-family: 'Anton'; src: url('fonts/anton-latin.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Bebas Neue'; src: url('fonts/bebas-neue-latin.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Pacifico'; src: url('fonts/pacifico-latin.woff2') format('woff2'); font-display: swap; }
+</style>
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">
-    <span class="brand-mark" aria-hidden="true">VT</span>
-    <span class="brand-name">VICE TIDE</span>
-    <span class="brand-sub">Cover Studio</span>
-  </div>
-  <ol class="steps">
-    <li><b>1</b> Add photos</li>
-    <li><b>2</b> Drag to frame</li>
-    <li><b>3</b> Type your title</li>
-    <li><b>4</b> Export PNG</li>
-  </ol>
-  <div class="top-actions">
-    <button id="surpriseBtn" type="button" class="btn ghost">🎲 Surprise Me</button>
-    <button id="exportTopBtn" type="button" class="btn primary">Export PNG</button>
-  </div>
+  <div class="brand">VICE TIDE <span>Cover Studio</span></div>
+  <div class="top-note">Turn your photo + caption into GTA 6-style cover art. Works offline. Export as PNG.</div>
 </header>
-
-<main class="studio">
-  <aside class="col left" aria-label="Photos and panels">
-    <section class="panel">
-      <h2>Photos</h2>
-      <div id="dropZone" class="drop">
-        <p>Drag photos here, or</p>
-        <label class="btn ghost file-label">Add photos
-          <input id="addPhotos" type="file" accept="image/*" multiple hidden>
-        </label>
-        <p class="hint">Your photos stay in your browser. The two samples are AI-made for make.fun and free to use.</p>
-      </div>
-      <div id="photosList" class="thumbs"></div>
-      <button id="autoFillBtn" type="button" class="btn">Auto fill panels</button>
-    </section>
-
-    <section class="panel">
-      <h2>Panel</h2>
-      <label>Selected panel
-        <select id="panelSelect"></select>
-      </label>
-      <label>Zoom <span class="val" id="zoomValue">1.00x</span>
-        <input id="zoomSlider" type="range" min="1" max="2.5" step="0.05" value="1">
-      </label>
-      <div class="row">
-        <button id="centerCropBtn" type="button" class="btn">Auto Center Crop</button>
-        <button id="replacePhotoBtn" type="button" class="btn">Replace Photo</button>
-      </div>
-      <label>Fit
-        <select id="fitSelect">
-          <option value="cover">Fill — crop to frame</option>
-          <option value="contain">Spread — show the whole photo</option>
-        </select>
-      </label>
-      <label>Panel label
-        <input id="panelLabel" type="text" maxlength="60" placeholder="PLACE  6:42 PM  —  TAGLINE">
-      </label>
-      <p class="hint">Tip: click a panel in the preview to select it.</p>
-    </section>
-  </aside>
-
-  <section class="col center" aria-label="Cover preview">
-    <div class="preview-wrap">
-      <canvas id="cover" width="960" height="540" aria-label="The cover"></canvas>
-    </div>
-    <div class="size-row" id="sizeBtns">
-      <button type="button" data-size="landscape" class="active">1920 × 1080 Landscape</button>
-      <button type="button" data-size="portrait">1080 × 1350 Portrait</button>
-      <button type="button" data-size="square">1080 × 1080 Square</button>
-    </div>
-    <div class="row export-row">
-      <button id="exportBtn" type="button" class="btn primary">Export PNG</button>
-      <button id="exportAllBtn" type="button" class="btn">Export all 3 sizes</button>
-    </div>
-    <p id="status" role="status"></p>
+<main class="layout">
+  <section class="col col-photos" aria-label="Photos">
+    <h2>Photos</h2>
+    <p class="hint">Pick a sample, or upload your own. The first panel is the hero.</p>
+    <div id="photoList" class="photo-list"></div>
   </section>
-
-  <aside class="col right" aria-label="Layout, grade and caption">
-    <section class="panel">
-      <h2>Layout</h2>
-      <div id="layoutBtns" class="chips"></div>
-    </section>
-
-    <section class="panel">
-      <h2>Grade</h2>
-      <div id="gradeBtns" class="chips"></div>
-      <label>Strength <span class="val" id="strengthValue">0.85</span>
-        <input id="strengthSlider" type="range">
-      </label>
-      <label>Contrast <span class="val" id="contrastValue">1.00</span>
-        <input id="contrastSlider" type="range">
-      </label>
-      <label>Saturation <span class="val" id="saturationValue">1.00</span>
-        <input id="saturationSlider" type="range">
-      </label>
-      <label>Grain <span class="val" id="grainValue">0.35</span>
-        <input id="grainSlider" type="range">
-      </label>
-      <label>Vignette <span class="val" id="vignetteValue">0.45</span>
-        <input id="vignetteSlider" type="range">
-      </label>
-      <label>Halftone <span class="val" id="halftoneValue">0.30</span>
-        <input id="halftoneSlider" type="range">
-      </label>
-      <label>Painterly <span class="val" id="painterlyValue">0.25</span>
-        <input id="painterlySlider" type="range">
-      </label>
-      <label>Ink <span class="val" id="inkValue">0.00</span>
-        <input id="inkSlider" type="range">
-      </label>
-    </section>
-
-    <section class="panel">
-      <h2>Caption</h2>
-      <label>Title
-        <input id="titleInput" type="text" maxlength="24" value="VICE TIDE">
-      </label>
-      <label>Subtitle (script)
-        <input id="subtitleInput" type="text" maxlength="24" value="Saltwater Nights">
-      </label>
-      <label>Tagline
-        <input id="taglineInput" type="text" maxlength="44" value="ONE COAST  •  NO RULES  •  COMING SOON">
-      </label>
-      <label>Press quote
-        <input id="quoteInput" type="text" maxlength="48" value="NEON, SALT AND FIVE STARS OF TROUBLE">
-      </label>
-      <label>Quoted by
-        <input id="quoteByInput" type="text" maxlength="24" value="THE COAST HERALD">
-      </label>
-      <label>Badge (seal)
-        <input id="badgeInput" type="text" maxlength="12" value="EST. 2026">
-      </label>
-      <label>Volume tag
-        <input id="volumeInput" type="text" maxlength="10" value="VOL. 06">
-      </label>
-      <label>Ribbon
-        <input id="ribbonInput" type="text" maxlength="22" value="COLLECTOR'S EDITION">
-      </label>
-      <label>HUD word
-        <input id="hudInput" type="text" maxlength="10" value="WANTED">
-      </label>
-      <label>Stars
-        <input id="starsInput" type="number" min="1" max="5" value="5">
-      </label>
-      <div class="toggles">
-        <label class="check"><input id="labelsToggle" type="checkbox" checked> Location tags</label>
-        <label class="check"><input id="badgeToggle" type="checkbox" checked> Badge</label>
-        <label class="check"><input id="volumeToggle" type="checkbox" checked> Volume tag</label>
-        <label class="check"><input id="ribbonToggle" type="checkbox" checked> Ribbon</label>
-      </div>
-    </section>
-  </aside>
+  <section class="col col-preview" aria-label="Preview">
+    <h2>Preview</h2>
+    <div class="preview-wrap">
+      <canvas id="preview" width="1920" height="1080"></canvas>
+    </div>
+    <div id="previewInfo" class="preview-info"></div>
+    <button id="exportBtn" type="button" class="export-btn">Export PNG</button>
+  </section>
+  <section class="col col-controls" aria-label="Controls">
+    <h2>Layout</h2>
+    <div id="layoutList" class="opt-list"></div>
+    <h2>Grade</h2>
+    <div id="gradeList" class="opt-list"></div>
+    <h2>Grade strength</h2>
+    <div class="slider-row">
+      <input id="strength" type="range" min="0" max="100" value="100">
+      <span id="strengthVal">100%</span>
+    </div>
+    <h2>Words</h2>
+    <label class="field">Title
+      <input id="titleInput" type="text" maxlength="24">
+    </label>
+    <label class="field">Script subtitle
+      <input id="scriptInput" type="text" maxlength="32">
+    </label>
+    <label class="field">Quote
+      <input id="quoteInput" type="text" maxlength="64">
+    </label>
+    <label class="field">Tagline
+      <input id="taglineInput" type="text" maxlength="48">
+    </label>
+    <h2>Export size</h2>
+    <div id="exportSizes" class="opt-list"></div>
+    <p class="fineprint">VICE TIDE is fan fiction. Not affiliated with or endorsed by any game studio. All photos made for make.fun.</p>
+  </section>
 </main>
-
-<script type="module" src="./src/main.js"></script>
+<script src="src/cover.js"></script>
+<script src="src/shots.js"></script>
+<script src="src/main.js"></script>
 </body>
 </html>
