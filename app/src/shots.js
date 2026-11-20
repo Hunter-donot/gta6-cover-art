@@ -1,97 +1,92 @@
-// VICE TIDE Cover Studio — shot mode.
-// Renders the four screenshots headlessly: ?shot=cover draws only the cover
-// at ?w= x ?h=; ?shot=editor shows the editor with hero7 + sunset active.
-// Sets window.__shotDone when fonts, photos and paint are ready.
-// Plain ES module, imports the cover renderer from cover.js.
+// shots.js — screenshot mode for VICE TIDE.
+// Loaded BEFORE main.js. Reads ?shot=cover | ?shot=editor from the URL.
+// ?shot=cover: renders the cover full-bleed on #preview, then sets
+//   window.__shotDone("cover"). main.js sees __shotCoverOnly and stays out.
+// ?shot=editor: does nothing here — main.js builds the editor UI and calls
+//   window.__shotDone("editor") after its first render.
+// window.__shotDonePromise resolves with the shot name when done.
 
-import {
-  PHOTOS,
-  defaultState,
-  drawCover,
-  loadPhotos,
-  photosReady,
-} from './cover.js';
+import { drawCover, SIZES, DEFAULTS } from "./cover.js";
 
-function params() {
-  return new URLSearchParams(window.location.search);
-}
+const params = new URLSearchParams(location.search);
+const shot = params.get("shot") || "cover";
+const sizeName = params.get("size") || "square";
+const layout = params.get("layout") || DEFAULTS.layout;
+const grade = params.get("grade") || DEFAULTS.grade;
+const photo = params.get("photo") || DEFAULTS.photo;
 
-function whenReady(images, fn) {
-  const check = () => {
-    if (photosReady(images) && document.fonts && document.fonts.status === 'loaded') {
-      fn();
-    } else if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        if (photosReady(images)) fn();
-        else setTimeout(check, 100);
-      });
-    } else {
-      setTimeout(check, 100);
-    }
-  };
-  check();
-}
+window.__shotCoverOnly = shot === "cover";
+window.__shotName = shot;
 
-function runCoverShot() {
-  // Tell main.js (loaded after this module) to skip the editor entirely.
-  window.__shotCoverOnly = true;
-  const p = params();
-  const W = parseInt(p.get('w') || '1280', 10);
-  const H = parseInt(p.get('h') || '720', 10);
-  const photoKey = p.get('photo') || 'boulevard';
-  const state = defaultState();
-  state.layout = 'hero7';
-  state.grade = 'sunset';
-  state.strength = 1.0;
-  state.photo = photoKey;
-  const images = loadPhotos();
-  // Replace the whole page with a bare canvas at exactly W x H.
-  document.body.style.margin = '0';
-  document.body.style.padding = '0';
-  document.body.style.background = '#fff';
-  document.body.innerHTML = '';
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  canvas.style.display = 'block';
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  whenReady(images, () => {
-    drawCover(ctx, state, W, H, images);
-    // One more frame so the paint lands before the screenshot.
-    requestAnimationFrame(() => {
-      window.__shotDone = true;
-    });
+let resolveDone;
+window.__shotDonePromise = new Promise((res) => { resolveDone = res; });
+window.__shotDone = (name) => {
+  window.__shotReady = true;
+  if (resolveDone) resolveDone(name || shot);
+};
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
   });
 }
 
-function runEditorShot() {
-  // Let main.js initialise the editor (hero7 + sunset + boulevard by
-  // default), then flag done once fonts and photos are ready.
-  const images = loadPhotos();
-  const state = defaultState();
-  void state;
-  void PHOTOS;
-  const check = () => {
-    const preview = document.getElementById('preview');
-    if (photosReady(images) && preview && preview.width > 0) {
-      window.__shotDone = true;
-    } else {
-      setTimeout(check, 150);
-    }
+async function renderCoverShot() {
+  if (shot !== "cover") return;
+  await document.fonts.ready.catch(() => {});
+  const wParam = parseInt(params.get("w") || "", 10);
+  const hParam = parseInt(params.get("h") || "", 10);
+  const [sw, sh] = SIZES[sizeName] || SIZES.square;
+  const w = Number.isFinite(wParam) && wParam > 0 ? wParam : sw;
+  const h = Number.isFinite(hParam) && hParam > 0 ? hParam : sh;
+  const images = {
+    boulevard: await loadImage("samples/boulevard.jpg"),
+    pier: await loadImage("samples/pier.jpg"),
   };
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => setTimeout(check, 300));
-  } else {
-    setTimeout(check, 500);
+  const canvas = document.getElementById("preview");
+  if (!canvas) {
+    window.__shotDone(shot);
+    return;
   }
+  // A cover shot is the cover ONLY: hide every bit of editor chrome and
+  // let the canvas fill the viewport exactly (no letterboxing).
+  document.querySelectorAll(".topbar, .controls, .size-label").forEach((el) => {
+    el.style.display = "none";
+  });
+  const layoutEl = document.querySelector(".layout");
+  if (layoutEl) layoutEl.style.cssText = "display:block;padding:0;margin:0;max-width:none;";
+  const colEl = document.querySelector(".preview-col");
+  if (colEl) colEl.style.cssText = "padding:0;margin:0;text-align:left;";
+  document.body.style.margin = "0";
+  document.body.style.background = "#ffffff";
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.maxWidth = "none";
+  canvas.style.width = "100vw";
+  canvas.style.height = "100vh";
+  canvas.style.objectFit = "fill";
+  canvas.style.display = "block";
+  canvas.style.margin = "0";
+  const ctx = canvas.getContext("2d");
+  drawCover(ctx, {
+    w, h,
+    images,
+    photo,
+    title: DEFAULTS.title,
+    script: DEFAULTS.script,
+    quote: DEFAULTS.quote,
+    layout,
+    grade,
+    strength: 1.0,
+  });
+  window.__shotDone(shot);
 }
 
-const mode = params().get('shot');
-if (mode === 'cover') {
-  runCoverShot();
-} else if (mode === 'editor') {
-  runEditorShot();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", renderCoverShot);
+} else {
+  renderCoverShot();
 }
