@@ -1,6 +1,4 @@
-/* VICE TIDE Cover Studio — dark 3-column editor theme. Fonts are vendored
-   locally (woff2) so the app works fully offline. */
-
+/* VICE TIDE Cover Studio — dark editor theme. Fonts vendored locally. */
 @font-face {
   font-family: 'Anton';
   src: url('fonts/anton-latin.woff2') format('woff2');
@@ -8,7 +6,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Bebas Neue';
   src: url('fonts/bebas-neue-latin.woff2') format('woff2');
@@ -16,7 +13,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Pacifico';
   src: url('fonts/pacifico-latin.woff2') format('woff2');
@@ -30,123 +26,142 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #160a24;
-  color: #f5f0ff;
-  font-family: Arial, Helvetica, sans-serif;
+  background: #14101a;
+  color: #f2edea;
+  font-family: 'Bebas Neue', 'Anton', system-ui, sans-serif;
 }
 
-#app { min-height: 100vh; }
-
-.loading {
-  padding: 40px;
-  text-align: center;
-  color: #c9b8e8;
+.topbar {
+  padding: 14px 20px 10px;
+  background: linear-gradient(90deg, #2a0a3a, #ff2e88 55%, #ff7a1a);
+  border-bottom: 3px solid #ffd21f;
+}
+.topbar h1 {
+  margin: 0;
+  font-family: 'Anton', sans-serif;
+  font-size: 34px;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #111;
+}
+.topbar h1 span {
+  font-family: 'Pacifico', cursive;
+  font-size: 22px;
+  letter-spacing: 0;
+  color: #ffd21f;
+  text-shadow: 1px 1px 0 #111;
+}
+.topbar .tagline {
+  margin: 2px 0 0;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.studio {
+.layout {
   display: grid;
-  grid-template-columns: 240px 1fr 300px;
+  grid-template-columns: 240px 1fr 280px;
   gap: 16px;
-  padding: 16px;
-  max-width: 1600px;
-  margin: 0 auto;
+  padding: 16px 20px;
+  align-items: start;
 }
 
 .col {
-  background: #221133;
-  border: 1px solid #3a2050;
-  border-radius: 12px;
-  padding: 16px;
+  background: #1e1826;
+  border: 1px solid #3a2f4a;
+  border-radius: 10px;
+  padding: 14px;
 }
-
 .col h2 {
-  margin: 0 0 12px;
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  margin: 0 0 10px;
+  font-family: 'Anton', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
   color: #ffd21f;
 }
 
-.photo-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.photo-btn, .upload-btn {
-  display: block;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #5a3a7a;
-  border-radius: 8px;
-  background: #2e1a44;
-  color: #f5f0ff;
-  font-size: 13px;
+.photo-list { display: flex; flex-direction: column; gap: 8px; }
+.photo-btn {
   text-align: left;
+  padding: 10px 12px;
+  background: #2a2138;
+  color: #f2edea;
+  border: 1px solid #4a3a5e;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px;
+  letter-spacing: 1px;
   cursor: pointer;
 }
-
-.photo-btn:hover, .upload-btn:hover { border-color: #ff2e88; }
-
+.photo-btn:hover { border-color: #ff2e88; }
 .photo-btn.active {
+  background: #ff2e88;
   border-color: #ff2e88;
-  background: #3d1a33;
+  color: #fff;
 }
 
-.preview-canvas {
-  width: 100%;
-  height: auto;
+.upload-label {
   display: block;
+  margin-top: 14px;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: #ffd21f;
+}
+#upload { margin-top: 6px; width: 100%; color: #f2edea; }
+.hint { font-size: 14px; color: #b9a8c9; letter-spacing: 0.5px; }
+
+.preview-col { text-align: center; }
+#preview {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #ffd21f;
   border-radius: 8px;
-  background: #000;
+  background: #fff;
 }
 
-.export-btn {
-  margin-top: 12px;
+.controls label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: #ffd21f;
+}
+.controls select,
+.controls input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  background: #2a2138;
+  color: #f2edea;
+  border: 1px solid #4a3a5e;
+  border-radius: 6px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+.controls input[type="range"] { width: 100%; accent-color: #ff2e88; }
+#export-btn {
+  margin-top: 16px;
   width: 100%;
   padding: 12px;
-  border: none;
-  border-radius: 8px;
   background: linear-gradient(90deg, #ff2e88, #ff7a1a);
   color: #fff;
-  font-size: 15px;
-  font-weight: 800;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Anton', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
   cursor: pointer;
 }
+#export-btn:hover { filter: brightness(1.1); }
 
-.export-btn:hover { filter: brightness(1.1); }
-
-.field {
-  display: block;
-  margin-bottom: 12px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #c9b8e8;
-}
-
-.field select,
-.field input[type="text"] {
-  display: block;
-  width: 100%;
-  margin-top: 6px;
-  padding: 9px 10px;
-  border: 1px solid #5a3a7a;
-  border-radius: 8px;
-  background: #1c0e2b;
-  color: #f5f0ff;
-  font-size: 14px;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.field input[type="range"] {
-  display: block;
-  width: 100%;
-  margin-top: 8px;
-  accent-color: #ff2e88;
+.foot {
+  padding: 12px 20px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #8d7ba3;
+  letter-spacing: 0.5px;
 }
 
 @media (max-width: 900px) {
-  .studio { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: 1fr; }
 }
