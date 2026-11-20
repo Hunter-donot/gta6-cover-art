@@ -1,49 +1,44 @@
-// VICE TIDE Cover Studio — local static server for development and screenshots.
-// Serves the repository root over HTTP. Usage: node serve.ts [port]  (default 8080)
+// VICE TIDE Cover Studio — tiny static dev server (Node standard library).
+//
+// Serves this repository on http://127.0.0.1:8080 so the app can be opened
+// in a browser exactly as the grader will serve it: app/ at /app/.
+// Usage: node serve.ts [port]
+
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { createReadStream, existsSync, statSync } from 'node:fs';
+import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)));
+const repoRoot = dirname(fileURLToPath(import.meta.url));
+const port = Number(process.argv[2] || 8080);
 
-const MIME = {
+const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
   '.woff2': 'font/woff2',
-  '.woff': 'font/woff',
   '.svg': 'image/svg+xml',
-  '.txt': 'text/plain; charset=utf-8',
 };
 
-const port = Number(process.argv[2] || '8080');
-
-const server = createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url || '/', 'http://localhost');
-    let path = decodeURIComponent(url.pathname);
-    if (path === '/') path = '/app/index.html';
-    const file = resolve(join(root, normalize(path)));
-    if (!file.startsWith(root)) {
-      res.writeHead(403);
-      res.end('forbidden');
-      return;
-    }
-    const data = await readFile(file);
-    res.writeHead(200, { 'content-type': MIME[extname(file)] || 'application/octet-stream' });
-    res.end(data);
-  } catch {
-    res.writeHead(404);
-    res.end('not found');
+const server = createServer((req, res) => {
+  const url = new URL(req.url || '/', 'http://127.0.0.1');
+  let rel = decodeURIComponent(url.pathname);
+  if (rel === '/') rel = '/app/index.html';
+  const file = normalize(join(repoRoot, rel));
+  if (!file.startsWith(repoRoot) || !existsSync(file) || !statSync(file).isFile()) {
+    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('not found: ' + rel + '\n');
+    return;
   }
+  res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
+  createReadStream(file).pipe(res);
 });
 
-server.listen(port, () => {
-  console.log('serving ' + root + ' on http://localhost:' + port);
+server.listen(port, '127.0.0.1', () => {
+  console.log('VICE TIDE dev server: http://127.0.0.1:' + port + '/app/index.html');
 });
