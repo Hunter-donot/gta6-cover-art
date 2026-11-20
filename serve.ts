@@ -1,15 +1,14 @@
-// VICE TIDE Cover Studio — tiny static dev server (Node 22 stdlib only).
-// Serves the repo root so the app can be opened at /app/index.html.
-import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+// VICE TIDE Cover Studio — static dev server.
+// Serves the repo root (app/ at /app/) on port 8123. Node 22 stdlib only.
 import { createServer } from 'node:http';
-import { extname, join, normalize } from 'node:path';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = process.cwd();
-const port = parseInt(process.env.PORT || '8123', 10);
+const repoDir = dirname(fileURLToPath(import.meta.url));
+const PORT = parseInt(process.env.PORT || '8123', 10);
 
-const TYPES = {
+const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -19,25 +18,25 @@ const TYPES = {
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
   '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+  '.md': 'text/markdown; charset=utf-8',
 };
 
-const server = createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url || '/', `http://127.0.0.1:${port}`);
-    let path = normalize(join(root, decodeURIComponent(url.pathname)));
-    if (!path.startsWith(root)) { res.writeHead(403); res.end('forbidden'); return; }
-    let info = await stat(path).catch(() => null);
-    if (info && info.isDirectory()) path = join(path, 'index.html');
-    info = await stat(path).catch(() => null);
-    if (!info || !info.isFile()) { res.writeHead(404); res.end('not found'); return; }
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] || 'application/octet-stream' });
-    createReadStream(path).pipe(res);
-  } catch (e) {
-    res.writeHead(500);
-    res.end(String(e));
+const server = createServer((req, res) => {
+  const url = decodeURIComponent((req.url || '/').split('?')[0]);
+  let path = url === '/' ? '/app/index.html' : url;
+  const file = join(repoDir, path);
+  if (!existsSync(file) || !statSync(file).isFile()) {
+    res.writeHead(404, { 'content-type': 'text/plain' });
+    res.end('not found: ' + path);
+    return;
   }
+  const type = MIME[extname(file).toLowerCase()] || 'application/octet-stream';
+  res.writeHead(200, { 'content-type': type });
+  res.end(readFileSync(file));
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`VICE TIDE dev server at http://127.0.0.1:${port}/app/index.html`);
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`VICE TIDE dev server at http://127.0.0.1:${PORT}/app/`);
 });
