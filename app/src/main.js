@@ -1,193 +1,206 @@
-// VICE TIDE Cover Studio — editor (3-column dark UI).
-// Loads the sample photos, renders a live preview via drawCover, and exports
-// PNG in three sizes. Plain ES module, no dependencies.
+// VICE TIDE Cover Studio — editor.
+// Dark 3-column editor: photos left, preview centre, controls right.
+// Plain ES module, imports the cover renderer from cover.js.
 
-import { LAYOUTS, GRADES, defaultState, drawCover } from './cover.js';
+import {
+  PHOTOS,
+  LAYOUTS,
+  GRADES,
+  EXPORT_SIZES,
+  defaultState,
+  drawCover,
+  loadPhotos,
+  photosReady,
+} from './cover.js';
 
-const SAMPLES = [
-  { id: 'boulevard', label: 'Boulevard (sunset woman)', src: 'samples/boulevard.jpg' },
-  { id: 'pier', label: 'Pier (fisherman)', src: 'samples/pier.jpg' },
-];
+const state = defaultState();
+let images = loadPhotos();
+let uploaded = null; // { name, img } when the user uploads a photo
+let exportSize = 'square';
 
-const SIZES = {
-  '1080x1080': { w: 1080, h: 1080, label: '1080 × 1080 (square)' },
-  '1080x1350': { w: 1080, h: 1350, label: '1080 × 1350 (portrait)' },
-  '1920x1080': { w: 1920, h: 1080, label: '1920 × 1080 (landscape)' },
-};
+const $ = (id) => document.getElementById(id);
 
-let state = defaultState();
-let photos = {};
-let previewCtx = null;
-let previewCanvas = null;
-
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('failed to load ' + src));
-    img.src = src;
-  });
-}
-
-async function loadSamples() {
-  const out = {};
-  for (const s of SAMPLES) {
-    try { out[s.id] = await loadImage(s.src); }
-    catch (e) { console.warn('sample failed:', s.id, e); }
-  }
-  return out;
+function activeImages() {
+  if (uploaded) return { boulevard: uploaded.img, pier: uploaded.img };
+  return images;
 }
 
 function renderPreview() {
-  if (!previewCtx || !previewCanvas) return;
-  const w = previewCanvas.width;
-  const h = previewCanvas.height;
-  // The preview canvas MUST render the live cover (a blank preview is a bug).
-  const ctx = previewCanvas.getContext('2d');
-  if (!ctx) return;
-  drawCover(ctx, w, h, state, photos);
-}
-
-function sizeOf(state) {
-  return SIZES[state.size] || SIZES['1080x1080'];
-}
-
-export function exportPNG() {
-  const { w, h } = sizeOf(state);
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  const canvas = $('preview');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  drawCover(ctx, w, h, state, photos);
-  const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
-  a.download = `vice-tide-${w}x${h}.png`;
-  a.click();
+  const size = EXPORT_SIZES[exportSize] || EXPORT_SIZES.square;
+  // Preview at a fixed display size; the export uses the real size.
+  const pw = 640;
+  const ph = Math.round((640 * size.h) / size.w);
+  canvas.width = pw;
+  canvas.height = ph;
+  drawCover(ctx, state, pw, ph, activeImages());
 }
 
-function el(tag, cls, text) {
-  const n = document.createElement(tag);
-  if (cls) n.className = cls;
-  if (text !== undefined) n.textContent = text;
-  return n;
+function renderExport() {
+  const size = EXPORT_SIZES[exportSize] || EXPORT_SIZES.square;
+  const off = document.createElement('canvas');
+  off.width = size.w;
+  off.height = size.h;
+  const ctx = off.getContext('2d');
+  drawCover(ctx, state, size.w, size.h, activeImages());
+  return off;
 }
 
-function buildEditor(root) {
-  root.innerHTML = '';
-  const wrap = el('div', 'studio');
-  // Left: photos.
-  const left = el('aside', 'col photos');
-  left.appendChild(el('h2', '', 'Photos'));
-  const list = el('div', 'photo-list');
-  SAMPLES.forEach((s) => {
-    const b = el('button', 'photo-btn' + (state.photo === s.id ? ' active' : ''), s.label);
-    b.addEventListener('click', () => {
-      state.photo = s.id;
-      document.querySelectorAll('.photo-btn').forEach((x) => x.classList.remove('active'));
-      b.classList.add('active');
+function buildPhotoList() {
+  const list = $('photo-list');
+  if (!list) return;
+  list.innerHTML = '';
+  for (const key of Object.keys(PHOTOS)) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'photo-btn' + (state.photo === key ? ' active' : '');
+    btn.textContent = PHOTOS[key].label + ' — ' + PHOTOS[key].tag;
+    btn.addEventListener('click', () => {
+      state.photo = key;
+      uploaded = null;
+      buildPhotoList();
       renderPreview();
     });
-    list.appendChild(b);
-  });
-  const up = el('label', 'upload-btn', 'Upload a photo…');
-  const file = document.createElement('input');
-  file.type = 'file';
-  file.accept = 'image/*';
-  file.style.display = 'none';
-  file.addEventListener('change', async () => {
-    const f = file.files && file.files[0];
-    if (!f) return;
-    const url = URL.createObjectURL(f);
-    const img = await loadImage(url);
-    photos.upload = img;
-    state.photo = 'upload';
-    renderPreview();
-  });
-  up.appendChild(file);
-  list.appendChild(up);
-  left.appendChild(list);
-  wrap.appendChild(left);
+    list.appendChild(btn);
+  }
+}
 
-  // Centre: preview.
-  const mid = el('main', 'col preview');
-  mid.appendChild(el('h2', '', 'Preview'));
-  previewCanvas = document.createElement('canvas');
-  const pv = sizeOf(state);
-  previewCanvas.width = 960;
-  previewCanvas.height = Math.round(960 * pv.h / pv.w);
-  previewCanvas.className = 'preview-canvas';
-  previewCtx = previewCanvas.getContext('2d');
-  mid.appendChild(previewCanvas);
-  const exp = el('button', 'export-btn', 'Export PNG');
-  exp.addEventListener('click', exportPNG);
-  mid.appendChild(exp);
-  wrap.appendChild(mid);
-
-  // Right: controls.
-  const right = el('aside', 'col controls');
-  right.appendChild(el('h2', '', 'Cover'));
-  const mkSelect = (label, options, value, onChange) => {
-    const lab = el('label', 'field', label);
-    const sel = document.createElement('select');
-    Object.entries(options).forEach(([k, v]) => {
-      const o = document.createElement('option');
-      o.value = k;
-      o.textContent = typeof v === 'string' ? v : v.name;
-      if (k === value) o.selected = true;
-      sel.appendChild(o);
+function buildPickers() {
+  const layoutSel = $('layout');
+  if (layoutSel) {
+    layoutSel.innerHTML = '';
+    for (const key of Object.keys(LAYOUTS)) {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = LAYOUTS[key].name;
+      if (key === state.layout) opt.selected = true;
+      layoutSel.appendChild(opt);
+    }
+    layoutSel.addEventListener('change', () => {
+      state.layout = layoutSel.value;
+      renderPreview();
     });
-    sel.addEventListener('change', () => { onChange(sel.value); renderPreview(); });
-    lab.appendChild(sel);
-    return lab;
-  };
-  right.appendChild(mkSelect('Layout', Object.fromEntries(Object.entries(LAYOUTS).map(([k, v]) => [k, v.name])), state.layout, (v) => { state.layout = v; }));
-  right.appendChild(mkSelect('Grade', Object.fromEntries(Object.entries(GRADES).map(([k, v]) => [k, v.name])), state.grade, (v) => { state.grade = v; }));
-  right.appendChild(mkSelect('Export size', Object.fromEntries(Object.entries(SIZES).map(([k, v]) => [k, v.label])), state.size, (v) => {
-    state.size = v;
-    const s = sizeOf(state);
-    previewCanvas.width = 960;
-    previewCanvas.height = Math.round(960 * s.h / s.w);
-    previewCtx = previewCanvas.getContext('2d');
-  }));
-  const mkText = (label, key) => {
-    const lab = el('label', 'field', label);
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = state[key];
-    inp.addEventListener('input', () => { state[key] = inp.value; renderPreview(); });
-    lab.appendChild(inp);
-    return lab;
-  };
-  right.appendChild(mkText('Title', 'title'));
-  right.appendChild(mkText('Script', 'script'));
-  right.appendChild(mkText('Quote', 'quote'));
-  right.appendChild(mkText('Tagline', 'tagline'));
-  const strengthLab = el('label', 'field', 'Sunset strength');
-  const slider = document.createElement('input');
-  slider.type = 'range';
-  slider.min = '0';
-  slider.max = '1.5';
-  slider.step = '0.05';
-  slider.value = String(state.strength);
-  slider.addEventListener('input', () => { state.strength = parseFloat(slider.value); renderPreview(); });
-  strengthLab.appendChild(slider);
-  right.appendChild(strengthLab);
-  wrap.appendChild(right);
-
-  root.appendChild(wrap);
+  }
+  const gradeSel = $('grade');
+  if (gradeSel) {
+    gradeSel.innerHTML = '';
+    for (const key of Object.keys(GRADES)) {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = GRADES[key].name;
+      if (key === state.grade) opt.selected = true;
+      gradeSel.appendChild(opt);
+    }
+    gradeSel.addEventListener('change', () => {
+      state.grade = gradeSel.value;
+      renderPreview();
+    });
+  }
+  const sizeSel = $('export-size');
+  if (sizeSel) {
+    sizeSel.innerHTML = '';
+    for (const key of Object.keys(EXPORT_SIZES)) {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = EXPORT_SIZES[key].name;
+      if (key === exportSize) opt.selected = true;
+      sizeSel.appendChild(opt);
+    }
+    sizeSel.addEventListener('change', () => {
+      exportSize = sizeSel.value;
+      renderPreview();
+    });
+  }
+  const strength = $('strength');
+  if (strength) {
+    strength.value = String(state.strength);
+    strength.addEventListener('input', () => {
+      state.strength = parseFloat(strength.value);
+      renderPreview();
+    });
+  }
+  const titleInput = $('title-input');
+  if (titleInput) {
+    titleInput.value = state.title;
+    titleInput.addEventListener('input', () => {
+      state.title = titleInput.value.toUpperCase() || 'VICE TIDE';
+      renderPreview();
+    });
+  }
+  const scriptInput = $('script-input');
+  if (scriptInput) {
+    scriptInput.value = state.script;
+    scriptInput.addEventListener('input', () => {
+      state.script = scriptInput.value || 'Saltwater Nights';
+      renderPreview();
+    });
+  }
+  const quoteInput = $('quote-input');
+  if (quoteInput) {
+    quoteInput.value = state.quote;
+    quoteInput.addEventListener('input', () => {
+      state.quote = quoteInput.value || 'NEON, SALT AND FIVE STARS OF TROUBLE';
+      renderPreview();
+    });
+  }
 }
 
-export async function initEditor(root) {
-  photos = await loadSamples();
-  buildEditor(root);
-  renderPreview();
-  window.__editorReady = true;
-}
-
-// Boot when loaded as the page's main script.
-if (typeof document !== 'undefined' && !window.__shotCoverOnly) {
-  document.addEventListener('DOMContentLoaded', () => {
-    const root = document.getElementById('app');
-    if (root) initEditor(root);
+function buildUpload() {
+  const input = $('upload');
+  if (!input) return;
+  input.addEventListener('change', () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        uploaded = { name: file.name, img };
+        state.photo = 'uploaded';
+        renderPreview();
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
   });
+}
+
+function buildExport() {
+  const btn = $('export-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const off = renderExport();
+    const a = document.createElement('a');
+    a.download = `vice-tide-${exportSize}.png`;
+    a.href = off.toDataURL('image/png');
+    a.click();
+  });
+}
+
+function tick() {
+  if (photosReady(activeImages())) {
+    renderPreview();
+  } else {
+    setTimeout(tick, 120);
+  }
+}
+
+export function initEditor() {
+  buildPhotoList();
+  buildPickers();
+  buildUpload();
+  buildExport();
+  tick();
+}
+
+// Shot mode sets window.__shotCoverOnly so the editor never initialises;
+// shots.js drives the cover directly instead.
+if (!window.__shotCoverOnly) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEditor);
+  } else {
+    initEditor();
+  }
 }
