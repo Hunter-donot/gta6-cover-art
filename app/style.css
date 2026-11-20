@@ -1,167 +1,143 @@
 /* VICE TIDE Cover Studio — dark editor theme. Fonts vendored locally. */
 @font-face {
-  font-family: 'Anton';
-  src: url('fonts/anton-latin.woff2') format('woff2');
+  font-family: "Anton";
+  src: url("fonts/anton-latin.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("fonts/bebas-neue-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Bebas Neue';
-  src: url('fonts/bebas-neue-latin.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Pacifico';
-  src: url('fonts/pacifico-latin.woff2') format('woff2');
+  font-family: "Pacifico";
+  src: url("fonts/pacifico-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 * { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #14101a;
-  color: #f2edea;
-  font-family: 'Bebas Neue', 'Anton', system-ui, sans-serif;
+html, body { margin: 0; padding: 0; }
+body {
+  background: #0d0b12;
+  color: #f2ede6;
+  font-family: "Bebas Neue", "Anton", system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  min-height: 100vh;
 }
 
 .topbar {
   padding: 14px 20px 10px;
-  background: linear-gradient(90deg, #2a0a3a, #ff2e88 55%, #ff7a1a);
-  border-bottom: 3px solid #ffd21f;
+  border-bottom: 1px solid #2a2438;
+  background: linear-gradient(90deg, #1c0f2e, #3a0f2e 55%, #4a1a08);
 }
 .topbar h1 {
   margin: 0;
-  font-family: 'Anton', sans-serif;
-  font-size: 34px;
-  letter-spacing: 2px;
+  font-family: Anton, "Bebas Neue", sans-serif;
+  font-size: 30px;
+  letter-spacing: 0.06em;
   color: #fff;
-  text-shadow: 2px 2px 0 #111;
 }
 .topbar h1 span {
-  font-family: 'Pacifico', cursive;
-  font-size: 22px;
-  letter-spacing: 0;
-  color: #ffd21f;
-  text-shadow: 1px 1px 0 #111;
+  color: #ff9e2c;
+  font-size: 20px;
+  letter-spacing: 0.12em;
 }
-.topbar .tagline {
-  margin: 2px 0 0;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.9);
-}
+.tagline { margin: 2px 0 0; color: #ffd9a0; font-size: 15px; }
 
 .layout {
   display: grid;
-  grid-template-columns: 240px 1fr 280px;
+  grid-template-columns: 240px 1fr 240px;
   gap: 16px;
-  padding: 16px 20px;
-  align-items: start;
+  padding: 16px 20px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
-
-.col {
-  background: #1e1826;
-  border: 1px solid #3a2f4a;
-  border-radius: 10px;
-  padding: 14px;
+.col { min-width: 0; }
+.controls h2 {
+  margin: 14px 0 8px;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  color: #ff9e2c;
+  text-transform: uppercase;
 }
-.col h2 {
-  margin: 0 0 10px;
-  font-family: 'Anton', sans-serif;
-  font-size: 20px;
-  letter-spacing: 2px;
-  color: #ffd21f;
+.controls h2:first-child { margin-top: 0; }
+.controls label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 14px;
+  color: #cfc6da;
 }
-
-.photo-list { display: flex; flex-direction: column; gap: 8px; }
-.photo-btn {
-  text-align: left;
-  padding: 10px 12px;
-  background: #2a2138;
-  color: #f2edea;
-  border: 1px solid #4a3a5e;
-  border-radius: 8px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 17px;
-  letter-spacing: 1px;
+.controls input[type="text"] {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid #3a324e;
+  border-radius: 6px;
+  background: #171221;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+}
+.controls input[type="range"] { width: 100%; accent-color: #ff5e3a; }
+.picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn {
+  padding: 6px 10px;
+  border: 1px solid #3a324e;
+  border-radius: 999px;
+  background: #171221;
+  color: #e8e0f2;
+  font: inherit;
+  font-size: 13px;
   cursor: pointer;
 }
-.photo-btn:hover { border-color: #ff2e88; }
-.photo-btn.active {
-  background: #ff2e88;
-  border-color: #ff2e88;
+.chip-btn:hover { border-color: #ff5e3a; }
+.chip-btn.active {
+  background: #ff5e3a;
+  border-color: #ff5e3a;
   color: #fff;
 }
-
-.upload-label {
-  display: block;
-  margin-top: 14px;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #ffd21f;
+.upload {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px dashed #6b5a86;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #ffd9a0;
+  font-size: 14px;
 }
-#upload { margin-top: 6px; width: 100%; color: #f2edea; }
-.hint { font-size: 14px; color: #b9a8c9; letter-spacing: 0.5px; }
-
+.upload input { display: none; }
 .preview-col { text-align: center; }
 #preview {
   max-width: 100%;
   height: auto;
-  border: 2px solid #ffd21f;
-  border-radius: 8px;
   background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
 }
-
-.controls label {
-  display: block;
-  margin: 10px 0 4px;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #ffd21f;
-}
-.controls select,
-.controls input[type="text"] {
-  width: 100%;
-  padding: 8px 10px;
-  background: #2a2138;
-  color: #f2edea;
-  border: 1px solid #4a3a5e;
-  border-radius: 6px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 17px;
-  letter-spacing: 1px;
-}
-.controls input[type="range"] { width: 100%; accent-color: #ff2e88; }
+.size-label { color: #9b8fb2; font-size: 14px; margin: 8px 0 0; }
 #export-btn {
-  margin-top: 16px;
   width: 100%;
+  margin-top: 16px;
   padding: 12px;
-  background: linear-gradient(90deg, #ff2e88, #ff7a1a);
-  color: #fff;
-  border: none;
+  border: 0;
   border-radius: 8px;
-  font-family: 'Anton', sans-serif;
-  font-size: 20px;
-  letter-spacing: 2px;
+  background: linear-gradient(90deg, #c81d6b, #ff5e3a, #ff9e2c);
+  color: #fff;
+  font: inherit;
+  font-size: 18px;
+  letter-spacing: 0.1em;
   cursor: pointer;
 }
 #export-btn:hover { filter: brightness(1.1); }
 
-.foot {
-  padding: 12px 20px 20px;
-  text-align: center;
-  font-size: 13px;
-  color: #8d7ba3;
-  letter-spacing: 0.5px;
-}
-
-@media (max-width: 900px) {
+@media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
+  .preview-col { order: -1; }
 }
