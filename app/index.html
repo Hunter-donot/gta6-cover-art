@@ -9,44 +9,43 @@
 <body>
 <header class="topbar">
   <h1>VICE TIDE <span>Cover Studio</span></h1>
-  <p class="tagline">Turn a photo + caption into GTA 6-style cover art.</p>
+  <p class="tagline">Photo + caption &rarr; GTA 6-style cover art</p>
 </header>
 <main class="layout">
-  <section class="col photos">
-    <h2>Photos</h2>
-    <div id="photo-list" class="photo-list"></div>
-    <label class="upload-label" for="upload">Upload your own photo</label>
-    <input id="upload" type="file" accept="image/*">
-    <p class="hint">Sample photos: Ocean Drive at sunset, Pier 26 at dawn.</p>
+  <section class="col controls">
+    <h2>Photo</h2>
+    <div id="photo-picker" class="picker"></div>
+    <label class="upload">Upload a photo
+      <input id="photo-upload" type="file" accept="image/*">
+    </label>
+    <h2>Layout</h2>
+    <div id="layout-picker" class="picker"></div>
+    <h2>Grade</h2>
+    <div id="grade-picker" class="picker"></div>
+    <h2>Strength</h2>
+    <input id="strength-input" type="range" min="0" max="1" step="0.05" value="1">
+    <span id="strength-value">100%</span>
   </section>
   <section class="col preview-col">
-    <h2>Preview</h2>
-    <canvas id="preview" width="640" height="640"></canvas>
-    <p class="hint">Live cover — what you see is what exports.</p>
+    <canvas id="preview"></canvas>
+    <p id="size-label" class="size-label">1080 &times; 1080</p>
   </section>
   <section class="col controls">
-    <h2>Controls</h2>
-    <label for="layout">Layout</label>
-    <select id="layout"></select>
-    <label for="grade">Grade</label>
-    <select id="grade"></select>
-    <label for="strength">Grade strength</label>
-    <input id="strength" type="range" min="0" max="1.5" step="0.05" value="1">
-    <label for="export-size">Export size</label>
-    <select id="export-size"></select>
-    <label for="title-input">Title</label>
-    <input id="title-input" type="text" value="VICE TIDE">
-    <label for="script-input">Script subtitle</label>
-    <input id="script-input" type="text" value="Saltwater Nights">
-    <label for="quote-input">Quote</label>
-    <input id="quote-input" type="text" value="NEON, SALT AND FIVE STARS OF TROUBLE">
+    <h2>Caption</h2>
+    <label>Title
+      <input id="title-input" type="text" value="VICE TIDE" maxlength="24">
+    </label>
+    <label>Script line
+      <input id="script-input" type="text" value="Saltwater Nights" maxlength="32">
+    </label>
+    <label>Quote
+      <input id="quote-input" type="text" value="Every sunset is a getaway." maxlength="64">
+    </label>
+    <h2>Export size</h2>
+    <div id="size-picker" class="picker"></div>
     <button id="export-btn" type="button">Export PNG</button>
   </section>
 </main>
-<footer class="foot">
-  VICE TIDE is fan fiction. Not affiliated with or endorsed by any game studio.
-  All photos were made for make.fun.
-</footer>
 <script type="module" src="src/shots.js"></script>
 <script type="module" src="src/main.js"></script>
 </body>
